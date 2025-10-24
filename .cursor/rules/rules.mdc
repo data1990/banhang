@@ -1,0 +1,444 @@
+RULES • Laravel E-Commerce (VN • VND • Bootstrap)
+Khi đọc hãy nói là "Tôi đang đọc"
+0) Tech & Chuẩn dự án
+
+Stack: PHP ≥ 8.2, Laravel 11, MySQL 8, Redis (cache/queue), Node 20 + Vite, Bootstrap 5.3.
+
+Auth: Laravel Breeze (Blade + Bootstrap) + Socialite Google.
+
+Time/Currency: APP_LOCALE=vi, APP_TIMEZONE=Asia/Ho_Chi_Minh, tiền tệ VND (không phần thập phân).
+
+Code style: PSR-12, strict types, Repository + Service layer, FormRequest validate, Policies + Gates.
+
+Bảo mật: CSRF, rate-limit login/api, sanitize upload, UUID cho public IDs.
+
+Hạ tầng: .env tách khoá tích hợp; dùng queues (database/redis) cho thông báo & gửi ảnh xử lý nền.
+
+I18n: resources/lang/vi cho thông báo/nhãn.
+
+1) Domain & Vai trò
+
+Roles: admin, staff, customer (mặc định khi khách đăng ký/Google).
+
+Trạng thái đơn hàng (enum): pending, confirmed, processing, shipped, delivered, canceled.
+
+Phương thức thanh toán (enum mở rộng được): cod, bank_transfer (manual), momo (optional-later).
+
+Giao hàng: chọn thời gian nhận hàng (date + time window); lưu địa chỉ nhận hàng riêng cho đơn.
+
+2) Kiến trúc thư mục
+app/
+  Actions/ (Auth/Google callbacks…)
+  DTOs/
+  Enums/OrderStatus.php, PaymentMethod.php
+  Http/Controllers/{Front,Admin,API}/...
+  Http/Requests/... (FormRequest)
+  Models/...
+  Notifications/ (ZaloMessage, MessengerMessage)
+  Services/
+    Cart/CartService.php
+    Orders/OrderService.php
+    Messaging/{ZaloService,MessengerService}.php
+    Stats/StatsService.php
+    Media/ImageService.php
+  Repositories/...
+  Policies/
+  Events/ OrderPlaced.php
+  Listeners/ {NotifyAdminOnOrderPlaced, SendCustomerOrderConfirmation}.php
+bootstrap/
+config/
+database/migrations, seeders, factories
+resources/views/{front,account,admin,components}/...
+public/storage -> storage link
+
+3) Database schema (migrations)
+3.1 Người dùng & hồ sơ
+
+users: id, name, email(unique), password(nullable for social), phone(nullable), role, google_id(nullable), last_login_at, remember_token, timestamps.
+
+customer_profiles: id, user_id FK, full_name, phone, address_line, ward, district, province, note, timestamps.
+
+Business rule: nếu người dùng là customer thì có 1 profile (editable ở “Thông tin khách hàng”).
+
+3.2 Catalog
+
+categories: id, name, slug, parent_id nullable, is_active, sort_order, timestamps.
+
+products: id(UUID public_id), category_id FK nullable, name, slug, sku(unique), price (bigint VND), sale_price nullable, stock(int), is_active, short_desc, long_desc (text), timestamps, softDeletes.
+
+product_images: id, product_id FK, path, is_primary(bool), sort_order.
+
+product_tags + tags (optional, để mở rộng lọc).
+
+Chỉ mục: index slug/sku; full-text (MySQL InnoDB) cho name/short_desc (nếu bật).
+
+3.3 Giỏ hàng/Đơn hàng
+
+carts: id, user_id nullable (guest by cookie), session_token, expires_at.
+
+cart_items: id, cart_id, product_id, qty, unit_price_snapshot.
+
+orders: id(UUID public_id), user_id nullable, customer_name, customer_phone, customer_address, receive_at (datetime), note, status(enum), payment_method(enum), payment_status(enum: unpaid, paid, refunded), subtotal, discount, shipping_fee, grand_total, placed_at(datetime), timestamps.
+
+order_items: id, order_id, product_id nullable (giữ tên & giá snapshot), product_name, sku, unit_price, qty, line_total.
+
+order_events (audit log): id, order_id, actor_id nullable, event (string/enum), data(json), created_at.
+
+3.4 Cấu hình & tích hợp
+
+settings: key(unique), value(text/json).
+Keys tối thiểu:
+
+bank.transfer_info (HTML mô tả STK/QR)
+
+zalo.oa_id, zalo.access_token
+
+messenger.page_id, messenger.page_token
+
+store.contact_phone, store.address, store.messenger_link, store.zalo_link
+
+3.5 Thống kê
+
+dùng view hoặc query thời gian theo orders.placed_at và order_items.
+
+4) Giao diện (Bootstrap 5)
+4.1 Trang chủ (front)
+
+Sections: Sản phẩm mới (order by created_at desc), Bán chạy (top by total qty 30 ngày), Danh sách sản phẩm (paging), Giỏ hàng mini (offcanvas).
+
+Card sản phẩm: ảnh chính, tên, giá (format VND), badge “sale” nếu sale_price.
+
+Bộ lọc: danh mục, search, price range (progressive enhancement).
+
+4.2 Trang sản phẩm & giỏ/đặt hàng
+
+Product detail: gallery, giá, tồn kho, nút “Thêm vào giỏ”.
+
+Cart page: bảng sản phẩm + đơn giá + số lượng + tổng; cập nhật qty (AJAX).
+
+Checkout page:
+
+Danh sách sản phẩm & đơn giá (tính tổng).
+
+Thời gian nhận hàng (datepicker + khoảng giờ preset).
+
+Thông tin khách hàng: nếu chưa đăng nhập → cho đăng nhập/đăng ký hoặc Login with Google; nếu đã có profile → auto fill & cho sửa.
+
+Phương thức thanh toán: cod, bank_transfer (hiển thị Thông tin chuyển khoản từ settings).
+
+Khi đặt hàng thành công: redirect trang cảm ơn + mã đơn (UUID ngắn) + hướng dẫn thanh toán; gửi tin nhắn tới quản trị qua Messenger/Zalo (queue).
+
+4.3 Khu vực khách hàng (“Tài khoản của tôi”)
+
+Thông tin khách hàng (họ tên, địa chỉ, SĐT) – CRUD trên customer_profiles.
+
+Đơn hàng của tôi – danh sách + chi tiết (status badge).
+
+Giỏ hàng – xem lại giỏ hiện tại (nếu còn).
+
+4.4 Trang quản trị (admin)
+
+Đăng nhập (Breeze) + middleware role:admin|staff.
+
+Khách hàng: list + search (name/phone/email), xem lịch sử đơn.
+
+Sản phẩm: CRUD, upload nhiều ảnh (primary flag), stock, sale_price, trạng thái.
+
+Đơn hàng:
+
+Tabs: Đang chờ (pending), Giao thành công (delivered); có bộ lọc theo date/status.
+
+Action: chuyển trạng thái (event log), in hóa đơn đơn giản (Blade).
+
+Thống kê:
+
+Doanh thu theo ngày/tuần/tháng (chart), lọc khoảng thời gian.
+
+Mặt hàng bán chạy (top N theo qty/amount).
+
+Cấu hình:
+
+Thông tin chuyển khoản (rich text/HTML).
+
+Zalo/Messenger: nhập OA/Page ID + token; nút “Kiểm tra kết nối”.
+
+Liên kết messenger/zalo hiển thị trên front.
+
+5) Use-cases & Luồng chính
+5.1 Thêm vào giỏ (guest & logged-in)
+
+Guest: tạo carts bằng session_token (cookie), tồn tại 7 ngày rolling.
+
+Logged-in: cart gắn user_id; merge giỏ guest khi login.
+
+Kiểm tra tồn kho trước khi tăng qty, lưu unit_price_snapshot theo thời điểm.
+
+5.2 Đặt hàng
+
+Validate: địa chỉ, SĐT VN, thời gian nhận hàng >= now + 2 giờ, giỏ không rỗng, tồn kho đủ.
+
+OrderService::placeOrder():
+
+lock giỏ → re-price (sale_price ưu tiên),
+
+tạo orders & order_items,
+
+trừ tồn kho (optimistic with stock check),
+
+phát Event OrderPlaced,
+
+queue NotifyAdminOnOrderPlaced (Zalo/Messenger) & SendCustomerOrderConfirmation (mail optional),
+
+clear cart.
+
+Payment:
+
+cod: payment_status = unpaid.
+
+bank_transfer: hiển thị hướng dẫn + gợi ý nội dung chuyển khoản ORDER-{short_id}.
+
+5.3 Thông báo tới quản trị (Zalo/Messenger)
+
+Abstraction: MessagingChannel qua Services:
+
+ZaloService::sendText($message)
+
+MessengerService::sendText($message)
+
+Bật/tắt từng kênh bằng settings; gửi async (queue), retry 3 lần, log lỗi.
+
+Nội dung mẫu:
+ĐƠN MỚI #{short_id} • {grand_total VND} • {customer_name} • {phone} • {receive_at}
+
+6) API/Routes (tối thiểu)
+Web routes (Blade)
+
+/ HomeController@index
+
+/products ProductController@index; /products/{slug} show
+
+/cart CartController@index
+
+/cart/items POST add, PATCH update qty, DELETE remove
+
+/checkout GET show, POST placeOrder
+
+/account (auth) profile + orders
+
+Auth: Breeze routes + /auth/google/redirect + /auth/google/callback
+
+Admin routes (prefix /admin, middleware auth, role:admin|staff)
+
+DashboardController@index (cards + charts)
+
+CustomersController@index/show
+
+ProductsController CRUD + images upload/delete + toggle active
+
+OrdersController: index(filters), show, updateStatus
+
+SettingsController: edit/update + test connections
+
+StatsController: revenue(), topProducts()
+
+API (optional for AJAX)
+
+/api/search/products?q=… (JSON)
+
+/api/stats/revenue?from&to&groupBy=day|month
+
+Rate limit 60/min.
+
+7) Validation rules (FormRequest mẫu)
+
+Product: name required|max:180; price required|integer|min:0; sale_price nullable|integer<price; stock integer|min:0.
+
+Checkout:
+
+customer_name required|max:120,
+
+phone required|regex:/^(0|\+84)(\d){9,10}$/,
+
+address required|max:255,
+
+receive_at required|date|after_or_equal:now+2 hours,
+
+payment_method in:cod,bank_transfer.
+
+Settings: zalo/messenger tokens string|max:255 (masked when render).
+
+8) Seeders & Factories
+
+Tạo AdminSeeder (user admin@example.com
+ / password admin12345), vài staff.
+
+CategoryFactory, ProductFactory (20-50 sản phẩm, ảnh placeholder), random stock/price.
+
+DemoOrdersSeeder để có dữ liệu thống kê.
+
+9) Thống kê (StatsService)
+
+Doanh thu: sum(orders.grand_total) filter by status in [confirmed,processing,shipped,delivered].
+
+Bán chạy: join order_items group by product_id, sum(qty) & sum(line_total), filter by placed_at range.
+
+Endpoints trả JSON cho chart (frontend dùng Chart.js hoặc ApexCharts – nhúng CDN).
+
+10) Upload ảnh & Media
+
+Dùng spatie/laravel-medialibrary (optional) hoặc storage disk public/products/….
+
+Tự động tạo thumbnail 600x600 (Intervention/Image). Validate MIME & kích thước.
+
+11) Tối ưu hiệu năng
+
+Cache: categories tree, home blocks (new/best-seller) 5 phút.
+
+Eager load: product images primary.
+
+DB indexes: orders(placed_at,status), order_items(order_id), products(slug,sku,is_active).
+
+12) Nhật ký & Kiểm soát
+
+order_events ghi: status change, notes, who changed.
+
+Policies: chỉ admin/staff đổi trạng thái; customer chỉ xem đơn của mình.
+
+2FA (optional; bật sau) cho admin.
+
+13) Cấu hình .env (mẫu)
+APP_NAME="BanHang"
+APP_LOCALE=vi
+APP_TIMEZONE=Asia/Ho_Chi_Minh
+
+DB_CONNECTION=mysql
+# …
+
+QUEUE_CONNECTION=redis
+CACHE_STORE=redis
+
+GOOGLE_CLIENT_ID=…
+GOOGLE_CLIENT_SECRET=…
+GOOGLE_REDIRECT_URI=${APP_URL}/auth/google/callback
+
+ZALO_OA_ID=…
+ZALO_ACCESS_TOKEN=…
+FB_PAGE_ID=…
+FB_PAGE_TOKEN=…
+
+CURRENCY=VND
+
+14) Event-driven
+
+Event: OrderPlaced($order)
+
+Listeners:
+
+NotifyAdminOnOrderPlaced → MessagingFanout (Zalo/Messenger) (queue)
+
+SendCustomerOrderConfirmation (mail; optional)
+
+Đăng ký trong EventServiceProvider.
+
+15) Mẫu Controller/Service (rút gọn, để Cursor AI sinh đầy đủ)
+
+OrderService::placeOrder() (pseudo)
+
+public function placeOrder(User|null $user, CheckoutDTO $dto): Order {
+  return DB::transaction(function() use ($user, $dto) {
+    $cart = $this->cartRepo->forUserOrSession($user, $dto->sessionToken, lock:true);
+    $items = $this->pricing->priceCart($cart);
+
+    $this->stock->assertAvailable($items);   // throws on insufficient
+    $order = $this->orders->createFromCart($user, $dto, $items);
+    $this->stock->decrement($items);
+
+    event(new OrderPlaced($order));
+    $this->cartRepo->clear($cart);
+
+    return $order;
+  });
+}
+
+
+NotifyAdminOnOrderPlaced (handle)
+
+public function handle(OrderPlaced $event): void {
+  $o = $event->order->fresh('items');
+  $msg = sprintf(
+    "ĐƠN MỚI #%s • %s • %s • %s • %s",
+    Str::of($o->id)->substr(0,8),
+    number_format($o->grand_total, 0, ',', '.') . 'đ',
+    $o->customer_name,
+    $o->customer_phone,
+    optional($o->receive_at)->format('d/m H:i')
+  );
+  if ($this->settings->enabled('zalo')) $this->zalo->sendText($msg);
+  if ($this->settings->enabled('messenger')) $this->fb->sendText($msg);
+}
+
+16) Giao tiếp Zalo/Messenger (stub)
+
+Zalo OA: REST POST /message với access_token (lưu trong settings).
+
+Facebook Messenger: Graph API /{PAGE_ID}/messages với page_token.
+
+Tạo Services bọc HTTP; khi “Kiểm tra kết nối”, gửi test Ping từ BanHang.
+
+Bảo mật: token chỉ hiển thị dạng masked trong form (***).
+
+17) Test kế hoạch (Pest/PHPUnit)
+
+Unit: Cart pricing, stock decrement, order totals.
+
+Feature: Checkout flow (guest → login → merge cart), order placed fires events, admin sees pending orders.
+
+HTTP tests cho API stats (auth & rate-limit).
+
+18) UX chi tiết cần Cursor AI tuân thủ
+
+Format tiền: helper money_vnd($n) → 1.234.567 đ.
+
+Datepicker: flatpickr (VN locale) cho receive_at (min = now+2h).
+
+Nút “Đăng nhập bằng Google” ở checkout nếu chưa đăng.
+
+Sau “Đặt hàng thành công” → trang cảm ơn + QR/chuyển khoản (nếu bank_transfer) + nút mở Messenger/Zalo của shop.
+
+Mobile-first: navbar offcanvas; cart offcanvas.
+
+19) Nhiệm vụ triển khai cho Cursor AI (thứ tự)
+
+Khởi tạo dự án Laravel + Breeze + Socialite + Bootstrap (Blade).
+
+Tạo migrations/models/seeders theo Schema #3.
+
+Sinh Controllers/Requests/Policies/Routes theo #6.
+
+Implement CartService, OrderService, StatsService, Messaging Services.
+
+Trang front: home, product list/detail, cart, checkout.
+
+Khu vực account (profile + orders).
+
+Admin: dashboard, products CRUD (+ upload), orders, stats, settings (+ test connections).
+
+Sự kiện & Queue: OrderPlaced + listeners; thiết lập redis queue.
+
+Seed dữ liệu demo + tests tối thiểu.
+
+Viết README cài đặt + .env.example với keys ở #13.
+
+20) Acceptance Criteria (phải đạt)
+
+Đăng nhập email/pass & Google hoạt động; giỏ khách được merge sau login.
+
+Thêm/sửa xoá sản phẩm & ảnh OK; tìm kiếm được.
+
+Đặt hàng end-to-end: giỏ → checkout (validate) → lưu đơn → trừ tồn → event bắn → nhận thông báo (log hoặc gửi thực) → trang cảm ơn.
+
+Trang admin có Thống kê doanh thu & mặt hàng bán chạy theo khoảng thời gian.
+
+Cấu hình chuyển khoản/Zalo/Messenger có thể cập nhật & Test kết nối thành công.
+
+VND format, múi giờ Asia/Ho_Chi_Minh, tiếng Việt đầy đủ.
