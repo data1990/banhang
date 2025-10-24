@@ -124,16 +124,3 @@
 </div>
 @endsection
 
-@php
-function getStatusColor($status) {
-    return match($status) {
-        'pending' => 'warning',
-        'confirmed' => 'info',
-        'processing' => 'primary',
-        'shipped' => 'success',
-        'delivered' => 'success',
-        'canceled' => 'danger',
-        default => 'secondary',
-    };
-}
-@endphp

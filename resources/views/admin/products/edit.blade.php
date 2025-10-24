@@ -128,7 +128,7 @@
                         @foreach($product->images as $image)
                             <div class="col-md-3 mb-3">
                                 <div class="position-relative">
-                                    <img src="{{ asset('storage/' . $image->path) }}" 
+                                    <img src="{{ product_thumbnail_url($image->path) }}" 
                                          class="img-thumbnail" 
                                          alt="{{ $product->name }}"
                                          style="width: 100%; height: 150px; object-fit: cover;">
@@ -213,7 +213,7 @@
                 <div class="card-body">
                     <div class="text-center">
                         @if($product->images->count() > 0)
-                            <img src="{{ asset('storage/' . $product->images->first()->path) }}" 
+                            <img src="{{ product_image_url($product->images->first()->path, 'medium') }}" 
                                  class="img-fluid mb-3" 
                                  alt="{{ $product->name }}"
                                  style="max-height: 200px; object-fit: cover;">

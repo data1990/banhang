@@ -65,6 +65,27 @@
             background-color: #f8f9fa;
             margin-top: 50px;
         }
+        
+        /* Mobile menu improvements */
+        @media (max-width: 991.98px) {
+            .navbar-collapse {
+                background: white;
+                border-radius: 8px;
+                box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+                margin-top: 10px;
+                padding: 15px;
+            }
+            .navbar-nav .nav-link {
+                padding: 8px 0;
+                border-bottom: 1px solid #eee;
+            }
+            .navbar-nav .nav-link:last-child {
+                border-bottom: none;
+            }
+            .d-flex.me-3 {
+                margin: 10px 0 !important;
+            }
+        }
     </style>
 
     @vite(['resources/css/app.css', 'resources/js/app.js'])

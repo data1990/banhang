@@ -80,7 +80,7 @@
                             <tr>
                                 <td>
                                     @if($product->images->count() > 0)
-                                        <img src="{{ asset('storage/' . $product->images->first()->path) }}" 
+                                        <img src="{{ product_thumbnail_url($product->images->first()->path) }}" 
                                              alt="{{ $product->name }}"
                                              style="width: 50px; height: 50px; object-fit: cover;"
                                              class="rounded">

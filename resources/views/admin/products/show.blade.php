@@ -199,7 +199,7 @@
             <div class="card-body">
                 <div class="text-center">
                     @if($product->images->count() > 0)
-                        <img src="{{ asset('storage/' . $product->images->first()->path) }}" 
+                        <img src="{{ product_image_url($product->images->first()->path, 'medium') }}" 
                              class="img-fluid mb-3" 
                              alt="{{ $product->name }}"
                              style="max-height: 200px; object-fit: cover;">

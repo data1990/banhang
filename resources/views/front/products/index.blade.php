@@ -89,7 +89,7 @@
                             <div class="card product-card h-100">
                                 <div class="position-relative">
                                     @if($product->images->count() > 0)
-                                        <img src="{{ asset('storage/' . $product->images->first()->path) }}" 
+                                        <img src="{{ product_image_url($product->images->first()->path, 'small') }}" 
                                              class="card-img-top" 
                                              alt="{{ $product->name }}"
                                              style="height: 250px; object-fit: cover;">

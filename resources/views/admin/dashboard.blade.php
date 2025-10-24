@@ -300,28 +300,3 @@ function updateChart(period) {
 </script>
 @endsection
 
-@php
-function getStatusColor($status) {
-    return match($status) {
-        'pending' => 'warning',
-        'confirmed' => 'info',
-        'processing' => 'primary',
-        'shipped' => 'success',
-        'delivered' => 'success',
-        'canceled' => 'danger',
-        default => 'secondary',
-    };
-}
-
-function getStatusLabel($status) {
-    return match($status) {
-        'pending' => 'Chờ xác nhận',
-        'confirmed' => 'Đã xác nhận',
-        'processing' => 'Đang xử lý',
-        'shipped' => 'Đang giao',
-        'delivered' => 'Đã giao',
-        'canceled' => 'Đã hủy',
-        default => $status,
-    };
-}
-@endphp

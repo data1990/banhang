@@ -27,7 +27,7 @@
                 <!-- Main Image -->
                 <div class="mb-3">
                     <img id="main-image" 
-                         src="{{ asset('storage/' . $product->images->first()->path) }}" 
+                         src="{{ product_image_url($product->images->first()->path, 'large') }}" 
                          class="img-fluid rounded" 
                          alt="{{ $product->name }}"
                          style="max-height: 500px; object-fit: cover;">
@@ -38,10 +38,10 @@
                     <div class="row">
                         @foreach($product->images as $index => $image)
                             <div class="col-3 mb-2">
-                                <img src="{{ asset('storage/' . $image->path) }}" 
+                                <img src="{{ product_thumbnail_url($image->path) }}" 
                                      class="img-thumbnail cursor-pointer thumbnail-image" 
                                      alt="{{ $product->name }}"
-                                     data-main-src="{{ asset('storage/' . $image->path) }}"
+                                     data-main-src="{{ product_image_url($image->path, 'large') }}"
                                      style="height: 80px; object-fit: cover;">
                             </div>
                         @endforeach

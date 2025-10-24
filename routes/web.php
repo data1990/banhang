@@ -37,6 +37,17 @@ Route::get('/checkout', [CheckoutController::class, 'show'])->name('checkout.sho
 Route::post('/checkout', [CheckoutController::class, 'placeOrder'])->name('checkout.place');
 Route::get('/checkout/success/{order}', [CheckoutController::class, 'success'])->name('checkout.success');
 
+// Dashboard redirect based on role
+Route::middleware('auth')->get('/dashboard', function () {
+    $user = auth()->user();
+    
+    if ($user->isAdmin() || $user->isStaff()) {
+        return redirect()->route('admin.dashboard');
+    }
+    
+    return redirect()->route('account.dashboard');
+})->name('dashboard');
+
 // Account routes
 Route::middleware('auth')->group(function () {
     Route::get('/account', function () {
@@ -64,7 +75,15 @@ Route::middleware('auth')->group(function () {
 Route::prefix('admin')->middleware(['auth', 'role:admin,staff'])->group(function () {
     Route::get('/', [AdminDashboardController::class, 'index'])->name('admin.dashboard');
     
-    Route::resource('products', AdminProductsController::class);
+    Route::resource('products', AdminProductsController::class)->names([
+        'index' => 'admin.products.index',
+        'create' => 'admin.products.create',
+        'store' => 'admin.products.store',
+        'show' => 'admin.products.show',
+        'edit' => 'admin.products.edit',
+        'update' => 'admin.products.update',
+        'destroy' => 'admin.products.destroy'
+    ]);
     Route::patch('products/{product}/toggle-active', [AdminProductsController::class, 'toggleActive'])->name('admin.products.toggle-active');
     Route::delete('products/images/{image}', [AdminProductsController::class, 'deleteImage'])->name('admin.products.images.delete');
     Route::patch('products/images/{image}/primary', [AdminProductsController::class, 'setPrimaryImage'])->name('admin.products.images.primary');
@@ -78,6 +97,22 @@ Route::prefix('admin')->middleware(['auth', 'role:admin,staff'])->group(function
     Route::post('settings', [AdminSettingsController::class, 'update'])->name('admin.settings.update');
     Route::post('settings/test-zalo', [AdminSettingsController::class, 'testZalo'])->name('admin.settings.test-zalo');
     Route::post('settings/test-messenger', [AdminSettingsController::class, 'testMessenger'])->name('admin.settings.test-messenger');
+});
+
+// Test route for image URLs
+Route::get('/test-image', function () {
+    $product = \App\Models\Product::with('images')->first();
+    if ($product && $product->images->count() > 0) {
+        $path = $product->images->first()->path;
+        return [
+            'original_path' => $path,
+            'thumbnail_url' => product_thumbnail_url($path),
+            'small_url' => product_image_url($path, 'small'),
+            'medium_url' => product_image_url($path, 'medium'),
+            'large_url' => product_image_url($path, 'large'),
+        ];
+    }
+    return 'No product found';
 });
 
 require __DIR__.'/auth.php';
