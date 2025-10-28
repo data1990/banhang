@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Admin\CustomersController as AdminCustomersController;
 use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
 use App\Http\Controllers\Admin\OrdersController as AdminOrdersController;
 use App\Http\Controllers\Admin\ProductsController as AdminProductsController;
@@ -95,6 +96,10 @@ Route::prefix('admin')->middleware(['auth', 'role:admin,staff'])->group(function
     Route::patch('orders/{order}/status', [AdminOrdersController::class, 'updateStatus'])->name('admin.orders.update-status');
     Route::patch('orders/{order}/payment-status', [AdminOrdersController::class, 'updatePaymentStatus'])->name('admin.orders.update-payment-status');
     Route::get('orders/{order}/print', [AdminOrdersController::class, 'print'])->name('admin.orders.print');
+    Route::get('orders/{order}/quick-view', [AdminOrdersController::class, 'quickView'])->name('admin.orders.quick-view');
+    
+    Route::get('customers', [AdminCustomersController::class, 'index'])->name('admin.customers.index');
+    Route::get('customers/detail', [AdminCustomersController::class, 'show'])->name('admin.customers.show');
     
     Route::get('settings', [AdminSettingsController::class, 'index'])->name('admin.settings.index');
     Route::post('settings', [AdminSettingsController::class, 'update'])->name('admin.settings.update');

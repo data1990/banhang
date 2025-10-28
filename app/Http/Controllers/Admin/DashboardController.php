@@ -20,7 +20,7 @@ class DashboardController extends Controller
         $from = $request->get('from', now()->subDays(30)->format('Y-m-d'));
         $to = $request->get('to', now()->format('Y-m-d'));
 
-        // Revenue stats
+        // Revenue stats (last 30 days)
         $revenueStats = $this->statsService->getRevenueStats($from, $to);
         
         // Top products
@@ -35,12 +35,36 @@ class DashboardController extends Controller
         // Daily revenue for chart
         $dailyRevenue = $this->statsService->getDailyRevenue($from, $to);
 
+        // Today stats
+        $todayStats = $this->statsService->getTodayStats();
+        
+        // Week stats
+        $weekStats = $this->statsService->getWeekStats();
+        
+        // Month stats
+        $monthStats = $this->statsService->getMonthStats();
+        
+        // Year stats
+        $yearStats = $this->statsService->getYearStats();
+        
+        // Scheduled orders (today & tomorrow)
+        $scheduledStats = $this->statsService->getScheduledOrdersStats();
+        
+        // Top customers
+        $topCustomers = $this->statsService->getTopCustomers(10);
+
         return view('admin.dashboard', compact(
             'revenueStats',
             'topProducts',
             'orderStatusStats',
             'recentOrders',
             'dailyRevenue',
+            'todayStats',
+            'weekStats',
+            'monthStats',
+            'yearStats',
+            'scheduledStats',
+            'topCustomers',
             'from',
             'to'
         ));

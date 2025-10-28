@@ -16,8 +16,12 @@ if (!function_exists('format_phone')) {
     /**
      * Format Vietnamese phone number
      */
-    function format_phone(string $phone): string
+    function format_phone(?string $phone): string
     {
+        if (empty($phone)) {
+            return 'N/A';
+        }
+        
         // Remove all non-digit characters
         $phone = preg_replace('/\D/', '', $phone);
         
@@ -95,5 +99,15 @@ if (!function_exists('product_thumbnail_url')) {
     {
         $imageService = app(\App\Services\Media\ImageService::class);
         return $imageService->getThumbnailUrl($path);
+    }
+}
+
+if (!function_exists('setting')) {
+    /**
+     * Get setting value by key
+     */
+    function setting(string $key, mixed $default = null): mixed
+    {
+        return \App\Models\Setting::get($key, $default);
     }
 }

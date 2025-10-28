@@ -12,6 +12,7 @@ use App\Services\Orders\OrderService;
 use App\Http\Requests\Admin\CreateOrderRequest;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 
 class OrdersController extends Controller
@@ -125,10 +126,52 @@ class OrdersController extends Controller
         return view('admin.orders.print', compact('order'));
     }
 
+    public function quickView(Order $order): \Illuminate\Http\JsonResponse
+    {
+        $order->load(['items.product', 'user']);
+        
+        $html = view('admin.orders.quick-view', compact('order'))->render();
+        
+        return response()->json([
+            'success' => true,
+            'html' => $html
+        ]);
+    }
+
     public function create(): View
     {
         $products = Product::active()->with('images')->get();
-        $customers = User::where('role', 'customer')->get();
+        
+        // Get unique customers from orders with their latest address
+        $customers = DB::select("
+            SELECT 
+                customer_name,
+                customer_phone,
+                customer_email,
+                customer_address,
+                MAX(placed_at) as last_order_date
+            FROM orders 
+            WHERE status IN ('confirmed', 'processing', 'shipped', 'delivered')
+            GROUP BY customer_name, customer_phone, customer_email, customer_address
+            ORDER BY customer_name
+        ");
+        
+        // Get the most recent address for each unique customer
+        $customers = collect($customers)->map(function ($customer) {
+            // Get the latest order for this customer to get the most recent address
+            $latestOrder = Order::where('customer_name', $customer->customer_name)
+                ->where('customer_phone', $customer->customer_phone)
+                ->whereIn('status', ['confirmed', 'processing', 'shipped', 'delivered'])
+                ->orderBy('placed_at', 'desc')
+                ->first();
+            
+            return (object) [
+                'name' => $customer->customer_name,
+                'phone' => $customer->customer_phone,
+                'email' => $customer->customer_email,
+                'address' => $latestOrder ? $latestOrder->customer_address : ($customer->customer_address ?? ''),
+            ];
+        });
         
         return view('admin.orders.create', compact('products', 'customers'));
     }
@@ -136,7 +179,14 @@ class OrdersController extends Controller
     public function store(CreateOrderRequest $request): RedirectResponse
     {
         try {
-            $order = $this->orderService->createOrderFromAdmin($request->validated());
+            $data = $request->validated();
+            
+            // Set customer_id to null if it's empty string (not a user ID)
+            if (empty($data['customer_id']) || $data['customer_id'] === '') {
+                $data['customer_id'] = null;
+            }
+            
+            $order = $this->orderService->createOrderFromAdmin($data);
             
             return redirect()->route('admin.orders.show', $order)
                 ->with('success', 'Đơn hàng đã được tạo thành công');

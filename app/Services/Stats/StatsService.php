@@ -85,4 +85,126 @@ class StatsService
             ->limit($limit)
             ->get();
     }
+
+    public function getTodayStats(): array
+    {
+        $today = now()->format('Y-m-d');
+        
+        $todayOrders = \App\Models\Order::whereDate('placed_at', $today)
+            ->whereIn('status', ['confirmed', 'processing', 'shipped', 'delivered'])
+            ->get();
+
+        $todayPaid = \App\Models\Order::whereDate('placed_at', $today)
+            ->where('payment_status', 'paid')
+            ->get();
+
+        return [
+            'orders_count' => $todayOrders->count(),
+            'revenue' => $todayOrders->sum('grand_total'),
+            'paid_count' => $todayPaid->count(),
+            'paid_amount' => $todayPaid->sum('grand_total'),
+        ];
+    }
+
+    public function getWeekStats(): array
+    {
+        $startOfWeek = now()->startOfWeek();
+        $endOfWeek = now()->endOfWeek();
+        
+        $weekOrders = \App\Models\Order::whereBetween('placed_at', [$startOfWeek, $endOfWeek])
+            ->whereIn('status', ['confirmed', 'processing', 'shipped', 'delivered'])
+            ->get();
+
+        return [
+            'orders_count' => $weekOrders->count(),
+            'revenue' => $weekOrders->sum('grand_total'),
+        ];
+    }
+
+    public function getMonthStats(): array
+    {
+        $startOfMonth = now()->startOfMonth();
+        $endOfMonth = now()->endOfMonth();
+        
+        $monthOrders = \App\Models\Order::whereBetween('placed_at', [$startOfMonth, $endOfMonth])
+            ->whereIn('status', ['confirmed', 'processing', 'shipped', 'delivered'])
+            ->get();
+
+        return [
+            'orders_count' => $monthOrders->count(),
+            'revenue' => $monthOrders->sum('grand_total'),
+        ];
+    }
+
+    public function getYearStats(): array
+    {
+        $startOfYear = now()->startOfYear();
+        $endOfYear = now()->endOfYear();
+        
+        $yearOrders = \App\Models\Order::whereBetween('placed_at', [$startOfYear, $endOfYear])
+            ->whereIn('status', ['confirmed', 'processing', 'shipped', 'delivered'])
+            ->get();
+
+        return [
+            'orders_count' => $yearOrders->count(),
+            'revenue' => $yearOrders->sum('grand_total'),
+        ];
+    }
+
+    public function getScheduledOrdersStats(): array
+    {
+        $today = now()->format('Y-m-d');
+        $tomorrow = now()->addDay()->format('Y-m-d');
+        
+        // Đơn hàng hẹn giao hôm nay
+        $todayScheduled = \App\Models\Order::whereDate('receive_at', $today)
+            ->whereIn('status', ['confirmed', 'processing', 'shipped'])
+            ->get();
+
+        // Đơn hàng hẹn giao ngày mai
+        $tomorrowScheduled = \App\Models\Order::whereDate('receive_at', $tomorrow)
+            ->whereIn('status', ['confirmed', 'processing', 'shipped'])
+            ->get();
+
+        return [
+            'today_scheduled' => [
+                'orders_count' => $todayScheduled->count(),
+                'total_amount' => $todayScheduled->sum('grand_total'),
+                'orders' => $todayScheduled,
+            ],
+            'tomorrow_scheduled' => [
+                'orders_count' => $tomorrowScheduled->count(),
+                'total_amount' => $tomorrowScheduled->sum('grand_total'),
+                'orders' => $tomorrowScheduled,
+            ],
+        ];
+    }
+
+    public function getTopCustomers(int $limit = 10): array
+    {
+        $customers = \App\Models\Order::selectRaw('
+                customer_name,
+                customer_phone,
+                customer_email,
+                COUNT(*) as total_orders,
+                SUM(grand_total) as total_spent,
+                MAX(placed_at) as last_order_at
+            ')
+            ->whereIn('status', ['confirmed', 'processing', 'shipped', 'delivered'])
+            ->groupBy('customer_name', 'customer_phone', 'customer_email')
+            ->orderBy('total_spent', 'desc')
+            ->limit($limit)
+            ->get();
+
+        return $customers->map(function ($customer) {
+            return (object) [
+                'name' => $customer->customer_name,
+                'phone' => $customer->customer_phone,
+                'email' => $customer->customer_email,
+                'total_orders' => (int) $customer->total_orders,
+                'total_spent' => (int) $customer->total_spent,
+                'last_order_at' => $customer->last_order_at,
+            ];
+        })->toArray();
+    }
 }

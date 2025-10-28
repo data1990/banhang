@@ -57,6 +57,11 @@ class User extends Authenticatable
         return $this->hasOne(CustomerProfile::class);
     }
 
+    public function loyaltyProfile(): HasOne
+    {
+        return $this->hasOne(CustomerLoyaltyProfile::class);
+    }
+
     public function carts(): HasMany
     {
         return $this->hasMany(Cart::class);

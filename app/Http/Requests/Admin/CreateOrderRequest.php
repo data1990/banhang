@@ -16,7 +16,7 @@ class CreateOrderRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'customer_id' => 'nullable|exists:users,id',
+            'customer_id' => 'nullable', // Can be index from customers array or user ID
             'customer_name' => 'required|string|max:255',
             'customer_phone' => 'required|string|max:20',
             'customer_email' => 'nullable|email|max:255',
