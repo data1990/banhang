@@ -6,7 +6,10 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Order;
+use App\Models\Product;
+use App\Models\User;
 use App\Services\Orders\OrderService;
+use App\Http\Requests\Admin\CreateOrderRequest;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -78,10 +81,68 @@ class OrdersController extends Controller
         }
     }
 
+    public function updatePaymentStatus(Request $request, Order $order): RedirectResponse
+    {
+        $request->validate([
+            'payment_status' => 'required|in:unpaid,paid,refunded',
+            'note' => 'nullable|string|max:500',
+        ]);
+
+        try {
+            $oldStatus = $order->payment_status;
+            $newStatus = $request->payment_status;
+            
+            $order->update(['payment_status' => $newStatus]);
+
+            // Create order event
+            $this->orderService->createOrderEvent($order->id, [
+                'event' => 'payment_status_changed',
+                'data' => [
+                    'old_status' => $oldStatus,
+                    'new_status' => $newStatus,
+                    'note' => $request->note,
+                ],
+                'created_by' => auth()->id(),
+            ]);
+
+            $statusLabel = match($newStatus) {
+                'paid' => 'đã thanh toán',
+                'unpaid' => 'chưa thanh toán',
+                'refunded' => 'đã hoàn tiền',
+                default => $newStatus,
+            };
+
+            return back()->with('success', "Trạng thái thanh toán đã được cập nhật thành: {$statusLabel}");
+        } catch (\Exception $e) {
+            return back()->with('error', 'Có lỗi xảy ra: ' . $e->getMessage());
+        }
+    }
+
     public function print(Order $order): View
     {
         $order->load(['items.product', 'user']);
         
         return view('admin.orders.print', compact('order'));
+    }
+
+    public function create(): View
+    {
+        $products = Product::active()->with('images')->get();
+        $customers = User::where('role', 'customer')->get();
+        
+        return view('admin.orders.create', compact('products', 'customers'));
+    }
+
+    public function store(CreateOrderRequest $request): RedirectResponse
+    {
+        try {
+            $order = $this->orderService->createOrderFromAdmin($request->validated());
+            
+            return redirect()->route('admin.orders.show', $order)
+                ->with('success', 'Đơn hàng đã được tạo thành công');
+        } catch (\Exception $e) {
+            return back()->withInput()
+                ->with('error', 'Có lỗi xảy ra: ' . $e->getMessage());
+        }
     }
 }

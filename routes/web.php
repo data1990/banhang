@@ -89,30 +89,17 @@ Route::prefix('admin')->middleware(['auth', 'role:admin,staff'])->group(function
     Route::patch('products/images/{image}/primary', [AdminProductsController::class, 'setPrimaryImage'])->name('admin.products.images.primary');
     
     Route::get('orders', [AdminOrdersController::class, 'index'])->name('admin.orders.index');
+    Route::get('orders/create', [AdminOrdersController::class, 'create'])->name('admin.orders.create');
+    Route::post('orders', [AdminOrdersController::class, 'store'])->name('admin.orders.store');
     Route::get('orders/{order}', [AdminOrdersController::class, 'show'])->name('admin.orders.show');
     Route::patch('orders/{order}/status', [AdminOrdersController::class, 'updateStatus'])->name('admin.orders.update-status');
+    Route::patch('orders/{order}/payment-status', [AdminOrdersController::class, 'updatePaymentStatus'])->name('admin.orders.update-payment-status');
     Route::get('orders/{order}/print', [AdminOrdersController::class, 'print'])->name('admin.orders.print');
     
     Route::get('settings', [AdminSettingsController::class, 'index'])->name('admin.settings.index');
     Route::post('settings', [AdminSettingsController::class, 'update'])->name('admin.settings.update');
     Route::post('settings/test-zalo', [AdminSettingsController::class, 'testZalo'])->name('admin.settings.test-zalo');
     Route::post('settings/test-messenger', [AdminSettingsController::class, 'testMessenger'])->name('admin.settings.test-messenger');
-});
-
-// Test route for image URLs
-Route::get('/test-image', function () {
-    $product = \App\Models\Product::with('images')->first();
-    if ($product && $product->images->count() > 0) {
-        $path = $product->images->first()->path;
-        return [
-            'original_path' => $path,
-            'thumbnail_url' => product_thumbnail_url($path),
-            'small_url' => product_image_url($path, 'small'),
-            'medium_url' => product_image_url($path, 'medium'),
-            'large_url' => product_image_url($path, 'large'),
-        ];
-    }
-    return 'No product found';
 });
 
 require __DIR__.'/auth.php';

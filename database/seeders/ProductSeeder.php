@@ -71,12 +71,14 @@ class ProductSeeder extends Seeder
                 'is_active' => true,
             ]);
 
-            // Create placeholder image
-            $product->images()->create([
-                'path' => 'products/placeholder.jpg',
-                'is_primary' => true,
-                'sort_order' => 0,
-            ]);
+            // Only create placeholder if no real images exist
+            if ($product->images()->count() === 0) {
+                $product->images()->create([
+                    'path' => 'products/placeholder.jpg',
+                    'is_primary' => true,
+                    'sort_order' => 0,
+                ]);
+            }
         }
     }
 }

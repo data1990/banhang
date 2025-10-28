@@ -5,6 +5,9 @@ declare(strict_types=1);
 namespace App\Repositories;
 
 use App\Models\Order;
+use App\Models\OrderItem;
+use App\Models\OrderEvent;
+use App\Models\Product;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Pagination\LengthAwarePaginator;
 
@@ -79,5 +82,46 @@ class OrderRepository
             ->orderBy('total_qty', 'desc')
             ->limit($limit)
             ->get();
+    }
+
+    public function createItem(int $orderId, array $data): OrderItem
+    {
+        $product = Product::find($data['product_id']);
+        
+        return OrderItem::create([
+            'order_id' => $orderId,
+            'product_id' => $data['product_id'],
+            'product_name' => $product->name ?? 'Unknown Product',
+            'sku' => $product->sku ?? 'N/A',
+            'qty' => $data['quantity'],
+            'unit_price' => $data['price'],
+            'line_total' => $data['subtotal'],
+        ]);
+    }
+
+    public function createEvent(int $orderId, array $data): OrderEvent
+    {
+        // Handle both old format (status/note) and new format (event/data)
+        if (isset($data['event']) && isset($data['data'])) {
+            // New format with event and data
+            return OrderEvent::create([
+                'order_id' => $orderId,
+                'actor_id' => $data['created_by'] ?? null,
+                'event' => $data['event'],
+                'data' => $data['data'],
+            ]);
+        } else {
+            // Old format with status and note (backward compatibility)
+            return OrderEvent::create([
+                'order_id' => $orderId,
+                'actor_id' => $data['created_by'] ?? null,
+                'event' => 'status_changed',
+                'data' => [
+                    'old_status' => null,
+                    'new_status' => $data['status'] ?? null,
+                    'note' => $data['note'] ?? null,
+                ],
+            ]);
+        }
     }
 }

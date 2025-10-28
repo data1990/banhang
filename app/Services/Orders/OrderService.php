@@ -139,4 +139,80 @@ class OrderService
 
         return $order;
     }
+
+    /**
+     * Create order from admin panel
+     */
+    public function createOrderFromAdmin(array $data): Order
+    {
+        // Validate required data
+        if (empty($data['items']) || !is_array($data['items'])) {
+            throw new \InvalidArgumentException('Items array is required');
+        }
+
+        // Calculate totals
+        $subtotal = 0;
+        foreach ($data['items'] as $item) {
+            $subtotal += ($item['price'] ?? 0) * ($item['quantity'] ?? 0);
+        }
+        
+        $shippingFee = 0; // Free shipping for now
+        $discount = 0; // No discount for now
+        $grandTotal = $subtotal + $shippingFee - $discount;
+
+        // Parse receive_at safely
+        $receiveAt = now()->addDays(1); // Default
+        if (!empty($data['receive_at'])) {
+            try {
+                $receiveAt = \Carbon\Carbon::parse($data['receive_at']);
+            } catch (\Exception $e) {
+                // Keep default if parsing fails
+            }
+        }
+
+        // Create order
+        $order = $this->orderRepository->create([
+            'user_id' => $data['customer_id'] ?? null,
+            'customer_name' => $data['customer_name'] ?? '',
+            'customer_phone' => $data['customer_phone'] ?? '',
+            'customer_address' => $data['shipping_address'] ?? '',
+            'customer_email' => $data['customer_email'] ?? null,
+            'receive_at' => $receiveAt,
+            'note' => $data['notes'] ?? null,
+            'payment_method' => $data['payment_method'] ?? 'cod',
+            'subtotal' => $subtotal,
+            'discount' => $discount,
+            'shipping_fee' => $shippingFee,
+            'grand_total' => $grandTotal,
+            'placed_at' => now(),
+            'status' => 'confirmed', // Admin orders are auto-confirmed
+        ]);
+
+        // Create order items
+        foreach ($data['items'] as $item) {
+            $this->orderRepository->createItem($order->id, [
+                'product_id' => $item['product_id'],
+                'quantity' => $item['quantity'],
+                'price' => $item['price'],
+                'subtotal' => $item['price'] * $item['quantity'],
+            ]);
+        }
+
+        // Create order event
+        $this->orderRepository->createEvent($order->id, [
+            'status' => 'confirmed',
+            'note' => 'Đơn hàng được tạo bởi admin',
+            'created_by' => auth()->id(),
+        ]);
+
+        return $order;
+    }
+
+    /**
+     * Create order event
+     */
+    public function createOrderEvent(int $orderId, array $data): void
+    {
+        $this->orderRepository->createEvent($orderId, $data);
+    }
 }

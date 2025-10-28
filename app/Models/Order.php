@@ -18,6 +18,7 @@ class Order extends Model
         'user_id',
         'customer_name',
         'customer_phone',
+        'customer_email',
         'customer_address',
         'receive_at',
         'note',
@@ -99,8 +100,18 @@ class Order extends Model
         return match($this->payment_method) {
             'cod' => 'Thanh toán khi nhận hàng',
             'bank_transfer' => 'Chuyển khoản ngân hàng',
-            'momo' => 'Ví MoMo',
+            'momo' => 'Ví điện tử MoMo',
             default => $this->payment_method,
+        };
+    }
+
+    public function getPaymentStatusLabelAttribute(): string
+    {
+        return match($this->payment_status) {
+            'paid' => 'Đã thanh toán',
+            'unpaid' => 'Chưa thanh toán',
+            'refunded' => 'Đã hoàn tiền',
+            default => $this->payment_status,
         };
     }
 }

@@ -4,6 +4,14 @@
 @section('page-title', 'Quản lý đơn hàng')
 
 @section('content')
+<!-- Actions -->
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="mb-0">Quản lý đơn hàng</h2>
+    <a href="{{ route('admin.orders.create') }}" class="btn btn-primary">
+        <i class="bi bi-plus-circle"></i> Tạo đơn hàng mới
+    </a>
+</div>
+
 <!-- Filters -->
 <div class="card mb-4">
     <div class="card-body">

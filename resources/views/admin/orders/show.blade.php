@@ -152,6 +152,7 @@
                 <!-- Status Update Form -->
                 <form method="POST" action="{{ route('admin.orders.update-status', $order) }}">
                     @csrf
+                    @method('PATCH')
                     <div class="mb-3">
                         <label for="status" class="form-label">Cập nhật trạng thái</label>
                         <select class="form-select" id="status" name="status" required>
@@ -195,10 +196,99 @@
                 </div>
                 <div class="d-flex justify-content-between mb-2">
                     <span>Trạng thái thanh toán:</span>
-                    <span class="badge bg-{{ $order->payment_status == 'paid' ? 'success' : 'warning' }}">
-                        {{ $order->payment_status == 'paid' ? 'Đã thanh toán' : 'Chưa thanh toán' }}
+                    <span class="badge bg-{{ $order->payment_status == 'paid' ? 'success' : ($order->payment_status == 'refunded' ? 'danger' : 'warning') }}">
+                        {{ $order->payment_status == 'paid' ? 'Đã thanh toán' : ($order->payment_status == 'refunded' ? 'Đã hoàn tiền' : 'Chưa thanh toán') }}
                     </span>
                 </div>
+                
+                @if($order->status === 'delivered' && $order->payment_status === 'unpaid')
+                <!-- Payment Status Update Form -->
+                <div class="mt-3 p-3 bg-light rounded">
+                    <h6 class="mb-3">Cập nhật thanh toán</h6>
+                    <form method="POST" action="{{ route('admin.orders.update-payment-status', $order) }}">
+                        @csrf
+                        @method('PATCH')
+                        <div class="mb-3">
+                            <label for="payment_status" class="form-label">Trạng thái thanh toán</label>
+                            <select class="form-select" id="payment_status" name="payment_status" required>
+                                <option value="paid" {{ $order->payment_status == 'paid' ? 'selected' : '' }}>Đã thanh toán</option>
+                                <option value="unpaid" {{ $order->payment_status == 'unpaid' ? 'selected' : '' }}>Chưa thanh toán</option>
+                                <option value="refunded" {{ $order->payment_status == 'refunded' ? 'selected' : '' }}>Đã hoàn tiền</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="payment_note" class="form-label">Ghi chú thanh toán</label>
+                            <textarea class="form-control" id="payment_note" name="note" rows="2" 
+                                      placeholder="Ghi chú về việc thanh toán..."></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-success w-100">
+                            <i class="bi bi-credit-card"></i> Cập nhật thanh toán
+                        </button>
+                    </form>
+                </div>
+                @elseif($order->status === 'delivered' && $order->payment_status === 'paid')
+                <!-- Already Paid - Show refund option -->
+                <div class="mt-3 p-3 bg-success bg-opacity-10 rounded">
+                    <div class="d-flex align-items-center mb-3">
+                        <i class="bi bi-check-circle-fill text-success me-2"></i>
+                        <h6 class="mb-0 text-success">Đơn hàng đã được thanh toán</h6>
+                    </div>
+                    <form method="POST" action="{{ route('admin.orders.update-payment-status', $order) }}">
+                        @csrf
+                        @method('PATCH')
+                        <div class="mb-3">
+                            <label for="payment_status" class="form-label">Thao tác</label>
+                            <select class="form-select" id="payment_status" name="payment_status" required>
+                                <option value="paid" selected>Giữ nguyên - Đã thanh toán</option>
+                                <option value="refunded">Hoàn tiền cho khách hàng</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="payment_note" class="form-label">Ghi chú</label>
+                            <textarea class="form-control" id="payment_note" name="note" rows="2" 
+                                      placeholder="Ghi chú về việc hoàn tiền..."></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-warning w-100">
+                            <i class="bi bi-arrow-clockwise"></i> Cập nhật trạng thái
+                        </button>
+                    </form>
+                </div>
+                @elseif(in_array($order->status, ['confirmed', 'processing', 'shipped']) && $order->payment_status === 'unpaid')
+                <!-- Pre-payment for bank transfer or MoMo -->
+                <div class="mt-3 p-3 bg-info bg-opacity-10 rounded">
+                    <div class="d-flex align-items-center mb-3">
+                        <i class="bi bi-info-circle-fill text-info me-2"></i>
+                        <h6 class="mb-0 text-info">Có thể thanh toán trước</h6>
+                    </div>
+                    <p class="small text-muted mb-3">
+                        @if($order->payment_method === 'bank_transfer')
+                            Khách hàng có thể chuyển khoản trước khi giao hàng
+                        @elseif($order->payment_method === 'momo')
+                            Khách hàng có thể thanh toán qua MoMo trước khi giao hàng
+                        @endif
+                    </p>
+                    <form method="POST" action="{{ route('admin.orders.update-payment-status', $order) }}">
+                        @csrf
+                        @method('PATCH')
+                        <div class="mb-3">
+                            <label for="payment_status" class="form-label">Cập nhật thanh toán</label>
+                            <select class="form-select" id="payment_status" name="payment_status" required>
+                                <option value="unpaid" {{ $order->payment_status == 'unpaid' ? 'selected' : '' }}>Chưa thanh toán</option>
+                                <option value="paid">Đã thanh toán trước</option>
+                                <option value="refunded">Hoàn tiền</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="payment_note" class="form-label">Ghi chú thanh toán</label>
+                            <textarea class="form-control" id="payment_note" name="note" rows="2" 
+                                      placeholder="Ghi chú về việc thanh toán trước..."></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100">
+                            <i class="bi bi-credit-card"></i> Cập nhật thanh toán
+                        </button>
+                    </form>
+                </div>
+                @endif
                 <hr>
                 <div class="d-flex justify-content-between fw-bold">
                     <span>Tổng tiền:</span>
@@ -245,6 +335,35 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             
             if (!confirm('Bạn có chắc muốn cập nhật trạng thái đơn hàng?')) {
+                e.preventDefault();
+                return false;
+            }
+        });
+    }
+
+    // Payment status update form
+    const paymentForm = document.querySelector('form[action*="update-payment-status"]');
+    if (paymentForm) {
+        paymentForm.addEventListener('submit', function(e) {
+            const paymentStatus = document.getElementById('payment_status').value;
+            const currentPaymentStatus = '{{ $order->payment_status }}';
+            
+            if (paymentStatus === currentPaymentStatus) {
+                e.preventDefault();
+                alert('Trạng thái thanh toán hiện tại đã được chọn');
+                return false;
+            }
+            
+            let confirmMessage = '';
+            if (paymentStatus === 'paid') {
+                confirmMessage = 'Bạn có chắc khách hàng đã thanh toán?';
+            } else if (paymentStatus === 'refunded') {
+                confirmMessage = 'Bạn có chắc muốn hoàn tiền cho khách hàng?';
+            } else if (paymentStatus === 'unpaid') {
+                confirmMessage = 'Bạn có chắc muốn đặt lại trạng thái chưa thanh toán?';
+            }
+            
+            if (confirmMessage && !confirm(confirmMessage)) {
                 e.preventDefault();
                 return false;
             }
