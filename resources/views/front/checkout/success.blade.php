@@ -93,26 +93,47 @@
             </div>
 
             <!-- Payment Instructions -->
-            @if($order->payment_method === 'bank_transfer')
+            @if(in_array($order->payment_method, ['qr_code', 'bank_transfer']) && $qrCode)
                 <div class="card mb-4">
                     <div class="card-header bg-warning">
                         <h5 class="mb-0">
-                            <i class="bi bi-credit-card"></i> Hướng dẫn thanh toán
+                            <i class="bi bi-qr-code"></i> Hướng dẫn thanh toán
+                            @if($order->payment_method === 'qr_code')
+                                - Quét mã QR
+                            @else
+                                - Chuyển khoản
+                            @endif
                         </h5>
                     </div>
                     <div class="card-body">
-                        <div class="alert alert-info">
-                            <h6>Vui lòng chuyển khoản theo thông tin sau:</h6>
-                            <div class="mt-3">
-                                {!! \App\Models\Setting::get('bank.transfer_info', '') !!}
+                        <!-- QR Code Payment -->
+                        <div class="row">
+                            <div class="{{ $order->payment_method === 'qr_code' ? 'col-md-12' : 'col-md-6' }} text-center mb-3 mb-md-0">
+                                <h6 class="mb-3">Quét mã QR để thanh toán</h6>
+                                <img src="{{ $qrCode }}" alt="QR Code" class="img-fluid border rounded" style="max-width: 300px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                                <p class="text-muted mt-2 small">Quét bằng app ngân hàng để thanh toán nhanh</p>
                             </div>
-                            <hr>
-                            <div class="bg-light p-3 rounded">
-                                <strong>Nội dung chuyển khoản:</strong> 
-                                <code>ORDER-{{ $order->short_id }}</code>
-                            </div>
+                            @if($order->payment_method === 'bank_transfer')
+                                <div class="col-md-6">
+                                    <div class="alert alert-info">
+                                        <h6>Hoặc chuyển khoản thủ công:</h6>
+                                        <div class="mt-3">
+                                            {!! \App\Models\Setting::get('bank.transfer_info', '') !!}
+                                        </div>
+                                    </div>
+                                </div>
+                            @endif
                         </div>
-                        <p class="text-muted">
+                        @if($order->payment_method === 'bank_transfer')
+                            <hr>
+                        @endif
+                        
+                        <div class="bg-light p-3 rounded">
+                            <strong>Nội dung chuyển khoản:</strong> 
+                            <code>ORDER-{{ $order->short_id }}</code>
+                        </div>
+                        
+                        <p class="text-muted mt-3">
                             <i class="bi bi-info-circle"></i>
                             Sau khi chuyển khoản, đơn hàng sẽ được xác nhận trong vòng 1-2 giờ làm việc.
                         </p>

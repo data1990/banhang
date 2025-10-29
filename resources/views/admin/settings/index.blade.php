@@ -18,7 +18,60 @@
                 </div>
                 <div class="card-body">
                     <div class="mb-3">
-                        <label for="bank_transfer_info" class="form-label">Thông tin chuyển khoản</label>
+                        <label for="bank_code" class="form-label">Mã ngân hàng *</label>
+                        <select class="form-select @error('bank_code') is-invalid @enderror" 
+                                id="bank_code" name="bank_code" required>
+                            <option value="">Chọn ngân hàng</option>
+                            <option value="VCB" {{ old('bank_code', $settings['bank']['code']) == 'VCB' ? 'selected' : '' }}>Vietcombank (VCB)</option>
+                            <option value="TCB" {{ old('bank_code', $settings['bank']['code']) == 'TCB' ? 'selected' : '' }}>Techcombank (TCB)</option>
+                            <option value="VPB" {{ old('bank_code', $settings['bank']['code']) == 'VPB' ? 'selected' : '' }}>VPBank (VPB)</option>
+                            <option value="MB" {{ old('bank_code', $settings['bank']['code']) == 'MB' ? 'selected' : '' }}>MB Bank (MB)</option>
+                            <option value="TPB" {{ old('bank_code', $settings['bank']['code']) == 'TPB' ? 'selected' : '' }}>TPBank (TPB)</option>
+                            <option value="ACB" {{ old('bank_code', $settings['bank']['code']) == 'ACB' ? 'selected' : '' }}>ACB</option>
+                            <option value="CTG" {{ old('bank_code', $settings['bank']['code']) == 'CTG' ? 'selected' : '' }}>VietinBank (CTG)</option>
+                            <option value="BIDV" {{ old('bank_code', $settings['bank']['code']) == 'BIDV' ? 'selected' : '' }}>BIDV</option>
+                            <option value="VBA" {{ old('bank_code', $settings['bank']['code']) == 'VBA' ? 'selected' : '' }}>Agribank (VBA)</option>
+                            <option value="STB" {{ old('bank_code', $settings['bank']['code']) == 'STB' ? 'selected' : '' }}>Sacombank (STB)</option>
+                            <option value="SHB" {{ old('bank_code', $settings['bank']['code']) == 'SHB' ? 'selected' : '' }}>SHB</option>
+                            <option value="VIB" {{ old('bank_code', $settings['bank']['code']) == 'VIB' ? 'selected' : '' }}>VIB</option>
+                            <option value="EIB" {{ old('bank_code', $settings['bank']['code']) == 'EIB' ? 'selected' : '' }}>Eximbank (EIB)</option>
+                            <option value="MSB" {{ old('bank_code', $settings['bank']['code']) == 'MSB' ? 'selected' : '' }}>MSB</option>
+                            <option value="NCB" {{ old('bank_code', $settings['bank']['code']) == 'NCB' ? 'selected' : '' }}>NCB</option>
+                            <option value="SEAB" {{ old('bank_code', $settings['bank']['code']) == 'SEAB' ? 'selected' : '' }}>SeABank (SEAB)</option>
+                            <option value="PVB" {{ old('bank_code', $settings['bank']['code']) == 'PVB' ? 'selected' : '' }}>PVcomBank (PVB)</option>
+                            <option value="HDB" {{ old('bank_code', $settings['bank']['code']) == 'HDB' ? 'selected' : '' }}>HDBank (HDB)</option>
+                        </select>
+                        <div class="form-text">Cần thiết để tạo QR code thanh toán</div>
+                        @error('bank_code')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="bank_account_number" class="form-label">Số tài khoản *</label>
+                        <input type="text" class="form-control @error('bank_account_number') is-invalid @enderror" 
+                               id="bank_account_number" name="bank_account_number" 
+                               value="{{ old('bank_account_number', $settings['bank']['account_number']) }}"
+                               placeholder="Nhập số tài khoản ngân hàng" required>
+                        <div class="form-text">Cần thiết để tạo QR code thanh toán</div>
+                        @error('bank_account_number')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="bank_account_name" class="form-label">Tên chủ tài khoản</label>
+                        <input type="text" class="form-control @error('bank_account_name') is-invalid @enderror" 
+                               id="bank_account_name" name="bank_account_name" 
+                               value="{{ old('bank_account_name', $settings['bank']['account_name']) }}"
+                               placeholder="Nhập tên chủ tài khoản">
+                        @error('bank_account_name')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="bank_transfer_info" class="form-label">Thông tin chuyển khoản chi tiết</label>
                         <textarea class="form-control @error('bank_transfer_info') is-invalid @enderror" 
                                   id="bank_transfer_info" name="bank_transfer_info" rows="6" 
                                   placeholder="Nhập thông tin ngân hàng, số tài khoản...">{{ old('bank_transfer_info', $settings['bank']['transfer_info']) }}</textarea>

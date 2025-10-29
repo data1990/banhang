@@ -139,6 +139,14 @@
                                 <i class="bi bi-people"></i> Khách hàng
                             </a>
                         </li>
+                        @if(auth()->check() && auth()->user()->isAdmin())
+                        <li class="nav-item">
+                            <a class="nav-link {{ request()->routeIs('admin.users.*') ? 'active' : '' }}" 
+                               href="{{ route('admin.users.index') }}">
+                                <i class="bi bi-person-gear"></i> Quản lý tài khoản
+                            </a>
+                        </li>
+                        @endif
                         <li class="nav-item">
                             <a class="nav-link {{ request()->routeIs('admin.settings.*') ? 'active' : '' }}" 
                                href="{{ route('admin.settings.index') }}">

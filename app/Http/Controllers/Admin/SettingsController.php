@@ -23,6 +23,9 @@ class SettingsController extends Controller
     {
         $settings = [
             'bank' => [
+                'code' => Setting::get('bank.code', ''),
+                'account_number' => Setting::get('bank.account_number', ''),
+                'account_name' => Setting::get('bank.account_name', ''),
                 'transfer_info' => Setting::get('bank.transfer_info', ''),
             ],
             'zalo' => [
@@ -49,6 +52,9 @@ class SettingsController extends Controller
     public function update(Request $request): RedirectResponse
     {
         $request->validate([
+            'bank_code' => 'nullable|string|max:10',
+            'bank_account_number' => 'nullable|string|max:50',
+            'bank_account_name' => 'nullable|string|max:255',
             'bank_transfer_info' => 'nullable|string',
             'zalo_oa_id' => 'nullable|string|max:255',
             'zalo_access_token' => 'nullable|string|max:255',
@@ -63,20 +69,46 @@ class SettingsController extends Controller
         ]);
 
         // Update settings
-        Setting::set('bank.transfer_info', $request->bank_transfer_info);
+        // Only set if value is not empty
+        if ($request->filled('bank_code')) {
+            Setting::set('bank.code', $request->bank_code);
+        }
+        if ($request->filled('bank_account_number')) {
+            Setting::set('bank.account_number', $request->bank_account_number);
+        }
+        if ($request->filled('bank_account_name')) {
+            Setting::set('bank.account_name', $request->bank_account_name);
+        }
+        Setting::set('bank.transfer_info', $request->bank_transfer_info ?? '');
         
-        Setting::set('zalo.oa_id', $request->zalo_oa_id);
-        Setting::set('zalo.access_token', $request->zalo_access_token);
-        Setting::set('zalo.enabled', $request->boolean('zalo_enabled'));
+        if ($request->filled('zalo_oa_id')) {
+            Setting::set('zalo.oa_id', $request->zalo_oa_id);
+        }
+        if ($request->filled('zalo_access_token')) {
+            Setting::set('zalo.access_token', $request->zalo_access_token);
+        }
+        Setting::set('zalo.enabled', $request->boolean('zalo_enabled') ? '1' : '0');
         
-        Setting::set('messenger.page_id', $request->messenger_page_id);
-        Setting::set('messenger.page_token', $request->messenger_page_token);
-        Setting::set('messenger.enabled', $request->boolean('messenger_enabled'));
+        if ($request->filled('messenger_page_id')) {
+            Setting::set('messenger.page_id', $request->messenger_page_id);
+        }
+        if ($request->filled('messenger_page_token')) {
+            Setting::set('messenger.page_token', $request->messenger_page_token);
+        }
+        Setting::set('messenger.enabled', $request->boolean('messenger_enabled') ? '1' : '0');
         
-        Setting::set('store.contact_phone', $request->store_contact_phone);
-        Setting::set('store.address', $request->store_address);
-        Setting::set('store.messenger_link', $request->store_messenger_link);
-        Setting::set('store.zalo_link', $request->store_zalo_link);
+        if ($request->filled('store_contact_phone')) {
+            Setting::set('store.contact_phone', $request->store_contact_phone);
+        }
+        if ($request->filled('store_address')) {
+            Setting::set('store.address', $request->store_address);
+        }
+        if ($request->filled('store_messenger_link')) {
+            Setting::set('store.messenger_link', $request->store_messenger_link);
+        }
+        if ($request->filled('store_zalo_link')) {
+            Setting::set('store.zalo_link', $request->store_zalo_link);
+        }
 
         return back()->with('success', 'Cài đặt đã được cập nhật thành công');
     }

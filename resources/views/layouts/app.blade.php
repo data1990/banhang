@@ -123,7 +123,7 @@
 
                     <!-- Cart -->
                     <div class="position-relative me-3">
-                        <button class="btn btn-outline-primary" data-bs-toggle="offcanvas" data-bs-target="#cartOffcanvas">
+                        <button class="btn btn-outline-primary" id="cart-btn" data-bs-toggle="offcanvas" data-bs-target="#cartOffcanvas">
                             <i class="bi bi-cart3"></i>
                             <span class="cart-badge" id="cart-count">0</span>
                         </button>
@@ -248,6 +248,16 @@
                 .catch(error => console.error('Error:', error));
         }
 
+        // Load cart content
+        function loadCartContent() {
+            fetch('{{ route("cart.offcanvas") }}')
+                .then(response => response.text())
+                .then(html => {
+                    document.getElementById('cart-content').innerHTML = html;
+                })
+                .catch(error => console.error('Error loading cart:', error));
+        }
+
         // Format money
         function formatMoney(amount) {
             return new Intl.NumberFormat('vi-VN').format(amount) + ' đ';
@@ -256,6 +266,16 @@
         // Initialize
         document.addEventListener('DOMContentLoaded', function() {
             updateCartCount();
+            
+            // Load cart content when offcanvas is shown
+            const cartBtn = document.getElementById('cart-btn');
+            const cartOffcanvas = document.getElementById('cartOffcanvas');
+            
+            if (cartBtn && cartOffcanvas) {
+                cartOffcanvas.addEventListener('show.bs.offcanvas', function () {
+                    loadCartContent();
+                });
+            }
         });
     </script>
 

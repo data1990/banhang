@@ -190,7 +190,8 @@ class StatsService
                 SUM(grand_total) as total_spent,
                 MAX(placed_at) as last_order_at
             ')
-            ->whereIn('status', ['confirmed', 'processing', 'shipped', 'delivered'])
+            ->where('status', 'delivered')
+            ->where('payment_status', 'paid')
             ->groupBy('customer_name', 'customer_phone', 'customer_email')
             ->orderBy('total_spent', 'desc')
             ->limit($limit)

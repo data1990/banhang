@@ -115,4 +115,36 @@ class CartController extends Controller
             ], 400);
         }
     }
+
+    public function getCount(Request $request): JsonResponse
+    {
+        try {
+            $cart = $this->cartService->getOrCreateCart(
+                auth()->id(),
+                $request->session()->getId()
+            );
+
+            return response()->json([
+                'count' => $cart->fresh()->item_count,
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'count' => 0,
+            ]);
+        }
+    }
+
+    public function offcanvas(Request $request): \Illuminate\View\View
+    {
+        $cart = $this->cartService->getOrCreateCart(
+            auth()->id(),
+            $request->session()->getId()
+        );
+
+        $cart->load(['items.product.images' => function ($query) {
+            $query->primary()->ordered();
+        }]);
+
+        return view('front.cart.offcanvas', compact('cart'));
+    }
 }

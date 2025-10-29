@@ -31,4 +31,10 @@ return [
         'region' => env('AWS_DEFAULT_REGION', 'us-east-1'),
     ],
 
+    'vietqr' => [
+        'api_url' => env('VIETQR_API_URL', 'https://img.vietqr.io/image'),
+        'client_id' => env('VIETQR_CLIENT_ID', ''),
+        'api_key' => env('VIETQR_API_KEY', ''),
+    ],
+
 ];

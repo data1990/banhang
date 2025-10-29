@@ -17,11 +17,11 @@ class CheckoutRequest extends FormRequest
     {
         return [
             'customer_name' => 'required|string|max:120',
-            'customer_phone' => 'required|regex:/^(0|\+84)(\d){9,10}$/',
+            'customer_phone' => ['required', 'regex:/^(0|\+84)(\d){9,10}$/'],
             'customer_address' => 'required|string|max:255',
             'receive_at' => 'required|date|after_or_equal:' . now()->addHours(2)->format('Y-m-d H:i'),
             'note' => 'nullable|string|max:500',
-            'payment_method' => 'required|in:cod,bank_transfer',
+            'payment_method' => 'required|in:cod,qr_code,bank_transfer',
         ];
     }
 

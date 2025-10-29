@@ -26,7 +26,10 @@ class Setting extends Model
 
     public static function set(string $key, $value): void
     {
-        static::updateOrCreate(['key' => $key], ['value' => $value]);
+        // Convert null or empty values to empty string to avoid database errors
+        $safeValue = $value !== null ? $value : '';
+        
+        static::updateOrCreate(['key' => $key], ['value' => $safeValue]);
     }
 
     public static function getJson(string $key, $default = [])

@@ -197,6 +197,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     // Show success toast
                     showToast(data.message, 'success');
                     updateCartCount();
+                    loadCartContent();
                 } else {
                     showToast(data.message, 'error');
                 }

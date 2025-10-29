@@ -10,6 +10,7 @@ use App\Http\Requests\CheckoutRequest;
 use App\Models\Setting;
 use App\Services\Cart\CartService;
 use App\Services\Orders\OrderService;
+use App\Services\VietQR\VietQRService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -18,10 +19,11 @@ class CheckoutController extends Controller
 {
     public function __construct(
         private CartService $cartService,
-        private OrderService $orderService
+        private OrderService $orderService,
+        private VietQRService $vietQRService
     ) {}
 
-    public function show(Request $request): View
+    public function show(Request $request): View|RedirectResponse
     {
         $cart = $this->cartService->getOrCreateCart(
             auth()->id(),
@@ -48,16 +50,17 @@ class CheckoutController extends Controller
     public function placeOrder(CheckoutRequest $request): RedirectResponse
     {
         try {
-            $dto = CheckoutDTO::fromArray($request->validated());
+            $validated = $request->validated();
+            
             $dto = new CheckoutDTO(
                 userId: auth()->id(),
                 sessionToken: $request->session()->getId(),
-                customerName: $dto->customerName,
-                customerPhone: $dto->customerPhone,
-                customerAddress: $dto->customerAddress,
-                receiveAt: $dto->receiveAt,
-                note: $dto->note,
-                paymentMethod: $dto->paymentMethod,
+                customerName: $validated['customer_name'],
+                customerPhone: $validated['customer_phone'],
+                customerAddress: $validated['customer_address'],
+                receiveAt: $validated['receive_at'],
+                note: $validated['note'] ?? null,
+                paymentMethod: $validated['payment_method'],
             );
 
             $order = $this->orderService->placeOrder(auth()->id(), $dto);
@@ -79,7 +82,19 @@ class CheckoutController extends Controller
         // Store links
         $zaloLink = Setting::get('store.zalo_link');
         $messengerLink = Setting::get('store.messenger_link');
+        
+        // Generate QR code if payment method is qr_code or bank transfer
+        $qrCode = null;
+        if (in_array($order->payment_method, ['qr_code', 'bank_transfer'])) {
+            $bankCode = Setting::get('bank.code', 'VCB');
+            $accountNo = Setting::get('bank.account_number', '');
+            $accountName = Setting::get('bank.account_name', '');
+            $amount = $order->grand_total;
+            $addInfo = 'DH' . str_pad((string) $order->id, 6, '0', STR_PAD_LEFT);
+            
+            $qrCode = $this->vietQRService->generateQR($bankCode, $accountNo, $amount, $addInfo, $accountName);
+        }
 
-        return view('front.checkout.success', compact('order', 'zaloLink', 'messengerLink'));
+        return view('front.checkout.success', compact('order', 'zaloLink', 'messengerLink', 'qrCode'));
     }
 }
