@@ -195,4 +195,14 @@ class OrdersController extends Controller
                 ->with('error', 'Có lỗi xảy ra: ' . $e->getMessage());
         }
     }
+
+    public function destroy(Order $order): RedirectResponse
+    {
+        try {
+            $order->delete();
+            return redirect()->route('admin.orders.index')->with('success', 'Đã xóa đơn hàng');
+        } catch (\Exception $e) {
+            return back()->with('error', 'Không thể xóa đơn hàng: ' . $e->getMessage());
+        }
+    }
 }

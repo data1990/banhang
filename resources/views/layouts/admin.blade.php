@@ -127,6 +127,14 @@
                                 <i class="bi bi-box"></i> Sản phẩm
                             </a>
                         </li>
+                        @if(auth()->check() && (auth()->user()->isAdmin() || auth()->user()->role === 'staff'))
+                        <li class="nav-item">
+                            <a class="nav-link {{ request()->routeIs('admin.categories.*') ? 'active' : '' }}" 
+                               href="{{ route('admin.categories.index') }}">
+                                <i class="bi bi-folder"></i> Danh mục
+                            </a>
+                        </li>
+                        @endif
                         <li class="nav-item">
                             <a class="nav-link {{ request()->routeIs('admin.orders.*') ? 'active' : '' }}" 
                                href="{{ route('admin.orders.index') }}">

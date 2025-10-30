@@ -53,7 +53,7 @@ class ImageService
 
     public function compressAndStoreImage(UploadedFile $image, string $path): void
     {
-        $fullPath = Storage::disk('public')->path($path);
+        $fullPath = public_path('storage/' . ltrim($path, '/'));
         
         // Ensure directory exists
         $directory = dirname($fullPath);
@@ -88,7 +88,7 @@ class ImageService
 
     public function createThumbnail(string $path): void
     {
-        $fullPath = Storage::disk('public')->path($path);
+        $fullPath = public_path('storage/' . ltrim($path, '/'));
         $pathInfo = pathinfo($fullPath);
         $thumbnailPath = $pathInfo['dirname'] . '/' . $pathInfo['filename'] . '_thumb.' . $pathInfo['extension'];
 
@@ -121,20 +121,23 @@ class ImageService
         
         foreach ($sizes as $size) {
             $filePath = $basePath . $size . '.' . $extension;
-            Storage::disk('public')->delete($filePath);
+            $abs = public_path('storage/' . ltrim($filePath, '/'));
+            if (file_exists($abs)) {
+                @unlink($abs);
+            }
         }
     }
 
     public function getImageUrl(string $path): string
     {
-        return Storage::disk('public')->url($path);
+        return asset('storage/' . ltrim($path, '/'));
     }
 
     public function getThumbnailUrl(string $path): string
     {
         $pathInfo = pathinfo($path);
         $thumbnailPath = $pathInfo['dirname'] . '/' . $pathInfo['filename'] . '_thumb.' . $pathInfo['extension'];
-        return Storage::disk('public')->url($thumbnailPath);
+        return asset('storage/' . ltrim($thumbnailPath, '/'));
     }
 
     /**
@@ -142,7 +145,7 @@ class ImageService
      */
     public function createImageSizes(string $path): void
     {
-        $fullPath = Storage::disk('public')->path($path);
+        $fullPath = public_path('storage/' . ltrim($path, '/'));
         $basePath = pathinfo($fullPath, PATHINFO_DIRNAME);
         $filename = pathinfo($fullPath, PATHINFO_FILENAME);
         $extension = pathinfo($fullPath, PATHINFO_EXTENSION);
@@ -181,6 +184,6 @@ class ImageService
         $pathInfo = pathinfo($path);
         $sizedPath = $pathInfo['dirname'] . '/' . $pathInfo['filename'] . '_' . $size . '.' . $pathInfo['extension'];
         
-        return Storage::disk('public')->url($sizedPath);
+        return asset('storage/' . ltrim($sizedPath, '/'));
     }
 }

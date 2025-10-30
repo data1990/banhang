@@ -39,6 +39,9 @@ class SettingsController extends Controller
                 'enabled' => Setting::get('messenger.enabled', false),
             ],
             'store' => [
+                'name' => Setting::get('store.name', config('app.name')),
+                'logo_url' => Setting::get('store.logo_url', ''),
+                'slogan' => Setting::get('store.slogan', ''),
                 'contact_phone' => Setting::get('store.contact_phone', ''),
                 'address' => Setting::get('store.address', ''),
                 'messenger_link' => Setting::get('store.messenger_link', ''),
@@ -52,6 +55,9 @@ class SettingsController extends Controller
     public function update(Request $request): RedirectResponse
     {
         $request->validate([
+            'store_name' => 'nullable|string|max:255',
+            'store_logo_url' => 'nullable|url',
+            'store_slogan' => 'nullable|string|max:255',
             'bank_code' => 'nullable|string|max:10',
             'bank_account_number' => 'nullable|string|max:50',
             'bank_account_name' => 'nullable|string|max:255',
@@ -103,6 +109,11 @@ class SettingsController extends Controller
         if ($request->filled('store_address')) {
             Setting::set('store.address', $request->store_address);
         }
+        if ($request->filled('store_name')) {
+            Setting::set('store.name', $request->store_name);
+        }
+        Setting::set('store.logo_url', $request->store_logo_url ?? '');
+        Setting::set('store.slogan', $request->store_slogan ?? '');
         if ($request->filled('store_messenger_link')) {
             Setting::set('store.messenger_link', $request->store_messenger_link);
         }

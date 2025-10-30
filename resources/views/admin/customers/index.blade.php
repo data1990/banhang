@@ -107,6 +107,17 @@
                                     <a href="{{ route('admin.customers.show', ['phone' => $customer->phone, 'email' => $customer->email]) }}" class="btn btn-sm btn-primary">
                                         <i class="bi bi-eye"></i> Chi tiết
                                     </a>
+                                    @if(auth()->check() && auth()->user()->isAdmin())
+                                    <form method="POST" action="{{ route('admin.customers.destroy') }}" class="d-inline" onsubmit="return confirm('Xóa toàn bộ đơn hàng của khách hàng này?');">
+                                        @csrf
+                                        @method('DELETE')
+                                        <input type="hidden" name="phone" value="{{ $customer->phone }}">
+                                        <input type="hidden" name="email" value="{{ $customer->email }}">
+                                        <button type="submit" class="btn btn-sm btn-outline-danger">
+                                            <i class="bi bi-trash"></i> Xóa KH
+                                        </button>
+                                    </form>
+                                    @endif
                                 </td>
                             </tr>
                         @endforeach

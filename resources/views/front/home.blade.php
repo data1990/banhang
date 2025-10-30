@@ -7,8 +7,9 @@
     <!-- Hero Section -->
     <div class="row bg-primary text-white py-5 mb-5">
         <div class="col-12 text-center">
-            <h1 class="display-4 fw-bold">Chào mừng đến với {{ config('app.name', 'BanHang') }}</h1>
-            <p class="lead">Khám phá những sản phẩm công nghệ mới nhất với giá tốt nhất</p>
+            <h1 class="display-4 fw-bold">Chào mừng đến với {{ \App\Models\Setting::get('store.name', config('app.name', 'BanHang')) }}</h1>
+            @php($slogan = \App\Models\Setting::get('store.slogan'))
+            <p class="lead">{{ $slogan ?: 'Khám phá những sản phẩm công nghệ mới nhất với giá tốt nhất' }}</p>
             <a href="{{ route('products.index') }}" class="btn btn-light btn-lg">Mua sắm ngay</a>
         </div>
     </div>

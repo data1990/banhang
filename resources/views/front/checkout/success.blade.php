@@ -118,7 +118,7 @@
                                     <div class="alert alert-info">
                                         <h6>Hoặc chuyển khoản thủ công:</h6>
                                         <div class="mt-3">
-                                            {!! \App\Models\Setting::get('bank.transfer_info', '') !!}
+                                            {!! str_replace('{ORDER_ID}', $order->short_id, \App\Models\Setting::get('bank.transfer_info', '')) !!}
                                         </div>
                                     </div>
                                 </div>

@@ -115,4 +115,31 @@ class CustomersController extends Controller
 
         return view('admin.customers.show', compact('customer', 'orders'));
     }
+
+    public function destroy(Request $request): \Illuminate\Http\RedirectResponse
+    {
+        $data = $request->validate([
+            'phone' => 'nullable|string',
+            'email' => 'nullable|email',
+        ]);
+
+        if (empty($data['phone']) && empty($data['email'])) {
+            return back()->with('error', 'Vui lòng cung cấp số điện thoại hoặc email để xóa khách hàng');
+        }
+
+        try {
+            $deleted = Order::where(function ($q) use ($data) {
+                if (!empty($data['phone'])) {
+                    $q->where('customer_phone', $data['phone']);
+                }
+                if (!empty($data['email'])) {
+                    $q->orWhere('customer_email', $data['email']);
+                }
+            })->delete();
+
+            return back()->with('success', 'Đã xóa ' . $deleted . ' đơn hàng của khách hàng này');
+        } catch (\Exception $e) {
+            return back()->with('error', 'Không thể xóa khách hàng: ' . $e->getMessage());
+        }
+    }
 }

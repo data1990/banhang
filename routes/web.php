@@ -3,6 +3,7 @@
 use App\Http\Controllers\Admin\CustomersController as AdminCustomersController;
 use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
 use App\Http\Controllers\Admin\OrdersController as AdminOrdersController;
+use App\Http\Controllers\Admin\CategoriesController as AdminCategoriesController;
 use App\Http\Controllers\Admin\ProductsController as AdminProductsController;
 use App\Http\Controllers\Admin\UsersController as AdminUsersController;
 use App\Http\Controllers\Admin\SettingsController as AdminSettingsController;
@@ -93,6 +94,19 @@ Route::prefix('admin')->middleware(['auth', 'role:admin,staff,kitchen,shipper'])
     Route::delete('products/images/{image}', [AdminProductsController::class, 'deleteImage'])->name('admin.products.images.delete');
     Route::patch('products/images/{image}/primary', [AdminProductsController::class, 'setPrimaryImage'])->name('admin.products.images.primary');
     
+    // Categories (admin, staff)
+    Route::middleware('role:admin,staff')->group(function () {
+        Route::resource('categories', AdminCategoriesController::class)->names([
+            'index' => 'admin.categories.index',
+            'create' => 'admin.categories.create',
+            'store' => 'admin.categories.store',
+            'edit' => 'admin.categories.edit',
+            'update' => 'admin.categories.update',
+            'destroy' => 'admin.categories.destroy',
+            'show' => 'admin.categories.show',
+        ])->except(['show']);
+    });
+    
     // Orders - view routes (including shipper)
     Route::get('orders', [AdminOrdersController::class, 'index'])->name('admin.orders.index');
     Route::get('orders/{order}', [AdminOrdersController::class, 'show'])->name('admin.orders.show');
@@ -105,10 +119,14 @@ Route::prefix('admin')->middleware(['auth', 'role:admin,staff,kitchen,shipper'])
         Route::post('orders', [AdminOrdersController::class, 'store'])->name('admin.orders.store');
         Route::patch('orders/{order}/status', [AdminOrdersController::class, 'updateStatus'])->name('admin.orders.update-status');
         Route::patch('orders/{order}/payment-status', [AdminOrdersController::class, 'updatePaymentStatus'])->name('admin.orders.update-payment-status');
+        Route::delete('orders/{order}', [AdminOrdersController::class, 'destroy'])->name('admin.orders.destroy');
     });
     
     Route::get('customers', [AdminCustomersController::class, 'index'])->name('admin.customers.index');
     Route::get('customers/detail', [AdminCustomersController::class, 'show'])->name('admin.customers.show');
+    Route::middleware('role:admin')->group(function () {
+        Route::delete('customers', [AdminCustomersController::class, 'destroy'])->name('admin.customers.destroy');
+    });
     
     // Users - admin only
     Route::middleware('role:admin')->group(function () {

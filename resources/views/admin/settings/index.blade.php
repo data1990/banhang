@@ -79,6 +79,13 @@
                         @error('bank_transfer_info')
                             <div class="invalid-feedback">{{ $message }}</div>
                         @enderror
+                        <div class="mt-3">
+                            <label class="form-label fw-semibold">Xem trước hiển thị</label>
+                            <div id="bank_transfer_preview" class="border rounded p-3 bg-light">
+                                {!! old('bank_transfer_info', $settings['bank']['transfer_info']) !!}
+                            </div>
+                            <small class="text-muted">Bạn có thể dùng biến: <code>{ORDER_ID}</code> để chèn mã đơn.</small>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -93,6 +100,40 @@
                     </h5>
                 </div>
                 <div class="card-body">
+                    <div class="mb-3">
+                        <label for="store_name" class="form-label">Tên website</label>
+                        <input type="text" class="form-control @error('store_name') is-invalid @enderror" 
+                               id="store_name" name="store_name" 
+                               value="{{ old('store_name', $settings['store']['name'] ?? config('app.name')) }}" placeholder="VD: BanHang">
+                        @error('store_name')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="store_logo_url" class="form-label">Logo (URL)</label>
+                        <input type="url" class="form-control @error('store_logo_url') is-invalid @enderror" 
+                               id="store_logo_url" name="store_logo_url" 
+                               value="{{ old('store_logo_url', $settings['store']['logo_url'] ?? '') }}" placeholder="https://.../logo.png">
+                        @error('store_logo_url')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
+                        @if(!empty($settings['store']['logo_url']))
+                            <div class="mt-2">
+                                <img src="{{ $settings['store']['logo_url'] }}" alt="Logo preview" style="height:40px">
+                            </div>
+                        @endif
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="store_slogan" class="form-label">Slogan</label>
+                        <input type="text" class="form-control @error('store_slogan') is-invalid @enderror" 
+                               id="store_slogan" name="store_slogan" 
+                               value="{{ old('store_slogan', $settings['store']['slogan'] ?? '') }}" placeholder="VD: Giá tốt - Giao nhanh - Hàng chính hãng">
+                        @error('store_slogan')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
+                    </div>
                     <div class="mb-3">
                         <label for="store_contact_phone" class="form-label">Số điện thoại</label>
                         <input type="text" class="form-control @error('store_contact_phone') is-invalid @enderror" 
@@ -313,6 +354,15 @@ document.addEventListener('DOMContentLoaded', function() {
             e.preventDefault();
         });
     });
+
+    // Live preview for bank transfer info
+    const bankInfoTextarea = document.getElementById('bank_transfer_info');
+    const bankInfoPreview = document.getElementById('bank_transfer_preview');
+    if (bankInfoTextarea && bankInfoPreview) {
+        bankInfoTextarea.addEventListener('input', function() {
+            bankInfoPreview.innerHTML = this.value;
+        });
+    }
 });
 </script>
 @endsection

@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
-    <title>{{ config('app.name', 'BanHang') }} - @yield('title', 'Trang chủ')</title>
+    <title>{{ \App\Models\Setting::get('store.name', config('app.name', 'BanHang')) }} - @yield('title', 'Trang chủ')</title>
 
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.bunny.net">
@@ -95,8 +95,14 @@
         <!-- Navigation -->
         <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm">
             <div class="container">
-                <a class="navbar-brand" href="{{ route('home') }}">
-                    <i class="bi bi-shop"></i> {{ config('app.name', 'BanHang') }}
+                <a class="navbar-brand d-flex align-items-center gap-2" href="{{ route('home') }}">
+                    @php($logo = \App\Models\Setting::get('store.logo_url'))
+                    @if($logo)
+                        <img src="{{ $logo }}" alt="Logo" style="height:28px">
+                    @else
+                        <i class="bi bi-shop"></i>
+                    @endif
+                    <span>{{ \App\Models\Setting::get('store.name', config('app.name', 'BanHang')) }}</span>
                 </a>
 
                 <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
@@ -169,7 +175,7 @@
             <div class="container">
                 <div class="row">
                     <div class="col-md-4">
-                        <h5>{{ config('app.name', 'BanHang') }}</h5>
+                        <h5>{{ \App\Models\Setting::get('store.name', config('app.name', 'BanHang')) }}</h5>
                         <p class="text-muted">Hệ thống thương mại điện tử hiện đại với tích hợp Zalo và Messenger.</p>
                     </div>
                     <div class="col-md-4">
@@ -204,7 +210,7 @@
                 </div>
                 <hr>
                 <div class="text-center text-muted">
-                    <p>&copy; {{ date('Y') }} {{ config('app.name', 'BanHang') }}. Tất cả quyền được bảo lưu.</p>
+                    <p>&copy; {{ date('Y') }} {{ \App\Models\Setting::get('store.name', config('app.name', 'BanHang')) }}. Tất cả quyền được bảo lưu.</p>
                 </div>
             </div>
         </footer>

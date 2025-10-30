@@ -311,6 +311,15 @@
                     <a href="{{ route('admin.orders.index') }}" class="btn btn-outline-secondary">
                         <i class="bi bi-arrow-left"></i> Quay lại danh sách
                     </a>
+                    @if(auth()->check() && in_array(auth()->user()->role, ['admin','staff','kitchen']))
+                    <form method="POST" action="{{ route('admin.orders.destroy', $order) }}" onsubmit="return confirm('Xóa đơn hàng này?');">
+                        @csrf
+                        @method('DELETE')
+                        <button type="submit" class="btn btn-danger">
+                            <i class="bi bi-trash"></i> Xóa đơn hàng
+                        </button>
+                    </form>
+                    @endif
                 </div>
             </div>
         </div>
